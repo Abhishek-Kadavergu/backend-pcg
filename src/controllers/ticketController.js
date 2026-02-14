@@ -10,7 +10,7 @@ exports.createTicket = async (req, res) => {
         console.log('[Ticket] Auth user ID:', req.user.id);
         console.log('[Ticket] Creating new ticket:', { title, category, priority });
         console.log('[Ticket] Full request body:', req.body);
-        
+
         // Validate required fields
         if (!title || !description) {
             return res.status(400).json({ msg: 'Title and description are required' });
@@ -43,8 +43,8 @@ exports.createTicket = async (req, res) => {
     } catch (err) {
         console.error('[Ticket] Create error:', err);
         console.error('[Ticket] Error stack:', err.stack);
-        res.status(500).json({ 
-            msg: 'Server Error', 
+        res.status(500).json({
+            msg: 'Server Error',
             error: err.message,
             details: err.errors ? Object.values(err.errors).map(e => e.message) : undefined
         });
@@ -59,7 +59,7 @@ exports.analyzeTicket = async (req, res) => {
 
     try {
         console.log('[Analyze] Processing ticket analysis:', { title });
-        
+
         // TODO: Call your ML model here
         // For now, returning the structure that was sent
         const mlResponse = {
@@ -112,29 +112,39 @@ exports.getUserTickets = async (req, res) => {
     }
 };
 
-// @desc    Get ticket by ID
+// @desc    Get ticket by ID (supports both MongoDB _id and custom ticket_id)
 // @route   GET /api/tickets/:id
 // @access  Private
 exports.getTicketById = async (req, res) => {
     try {
-        const ticket = await Ticket.findById(req.params.id);
+        const id = req.params.id;
+        let ticket;
+
+        console.log('[TicketById] Request for ID:', id);
+
+        // Check if looking up by custom ticket_id or MongoDB _id
+        if (id.startsWith('TICKET-')) {
+            ticket = await Ticket.findOne({ ticket_id: id });
+        } else {
+            // Validate MongoDB ObjectId format to prevent CastErrors
+            if (id.match(/^[0-9a-fA-F]{24}$/)) {
+                ticket = await Ticket.findById(id);
+            } else {
+                return res.status(404).json({ msg: 'Invalid Ticket ID format' });
+            }
+        }
 
         if (!ticket) {
+            console.log('[TicketById] Ticket not found for ID:', id);
             return res.status(404).json({ msg: 'Ticket not found' });
         }
 
-        // Make sure user owns ticket
-        if (ticket.user.toString() !== req.user.id) {
-            return res.status(401).json({ msg: 'Not authorized' });
-        }
 
-        console.log('[TicketById] Retrieved ticket:', ticket._id);
+
+        console.log('[TicketById] Retrieved ticket:', ticket.ticket_id || ticket._id);
         res.json(ticket);
     } catch (err) {
         console.error('[TicketById] Get error:', err.message);
-        if (err.kind === 'ObjectId') {
-            return res.status(404).json({ msg: 'Ticket not found' });
-        }
         res.status(500).json({ msg: 'Server Error', error: err.message });
     }
 };
