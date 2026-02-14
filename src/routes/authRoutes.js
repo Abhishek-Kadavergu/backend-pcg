@@ -45,14 +45,46 @@ router.get('/profile', auth, async (req, res) => {
         console.log('[Profile] Fetching profile for user:', req.user.id);
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
-            return res.status(404).json({ msg: 'User not found' });
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found',
+                error: 'User not found' 
+            });
         }
         console.log('[Profile] User found:', user.email);
-        res.json(user);
+        
+        // Return in frontend-expected format
+        res.json({ 
+            success: true,
+            data: {
+                id: user._id || user.id,
+                email: user.email,
+                name: user.firstName || user.email.split('@')[0],
+                userId: user.userId,
+                googleId: user.googleId,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            },
+            message: 'Profile fetched successfully'
+        });
     } catch (err) {
         console.error('[Profile] Error:', err.message);
-        res.status(500).json({ msg: 'Server Error', error: err.message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server Error', 
+            error: err.message 
+        });
     }
+});
+
+// @route   POST api/auth/logout
+// @desc    Logout user (client-side token deletion)
+// @access  Public
+router.post('/logout', (req, res) => {
+    res.json({ 
+        success: true, 
+        message: 'Logged out successfully' 
+    });
 });
 
 module.exports = router;

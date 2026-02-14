@@ -170,8 +170,8 @@ exports.updateTicket = async (req, res) => {
 
         if (!ticket) return res.status(404).json({ msg: 'Ticket not found' });
 
-        // Make sure user owns ticket
-        if (ticket.user.toString() !== req.user.id) {
+        // Allow admins to update any ticket, or users to update their own tickets
+        if (req.user.role !== 'admin' && ticket.user.toString() !== req.user.id) {
             return res.status(401).json({ msg: 'Not authorized' });
         }
 

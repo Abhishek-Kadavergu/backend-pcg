@@ -12,11 +12,15 @@ exports.signup = async (req, res) => {
         let user = await User.findOne({ email });
 
         if (user) {
-            return res.status(400).json({ msg: 'User already exists' });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'User already exists',
+                error: 'User already exists' 
+            });
         }
 
         user = new User({
-            userId: new mongoose.Types.ObjectId().toString(), // Or generate a specific ID format if needed
+            userId: new mongoose.Types.ObjectId().toString(),
             email,
             password,
             firstName
@@ -38,13 +42,38 @@ exports.signup = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: 360000 },
             (err, token) => {
-                if (err) throw err;
-                res.json({ token, userId: user.userId });
+                if (err) {
+                    console.error('JWT Sign Error:', err);
+                    return res.status(500).json({ 
+                        success: false, 
+                        message: 'Token generation failed',
+                        error: err.message 
+                    });
+                }
+                
+                // Return in frontend-expected format
+                res.json({ 
+                    success: true,
+                    data: {
+                        token,
+                        user: {
+                            id: user._id || user.id,
+                            email: user.email,
+                            name: user.firstName || user.email.split('@')[0],
+                            userId: user.userId
+                        }
+                    },
+                    message: 'Signup successful'
+                });
             }
         );
     } catch (err) {
         console.error('Signup Error:', err);
-        res.status(500).json({ msg: 'Server error', error: err.message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error', 
+            error: err.message 
+        });
     }
 };
 
@@ -55,13 +84,21 @@ exports.login = async (req, res) => {
         let user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(400).json({ msg: 'Invalid Credentials' });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid Credentials',
+                error: 'Invalid Credentials' 
+            });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(400).json({ msg: 'Invalid Credentials' });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid Credentials',
+                error: 'Invalid Credentials' 
+            });
         }
 
         const payload = {
@@ -75,13 +112,38 @@ exports.login = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: 360000 },
             (err, token) => {
-                if (err) throw err;
-                res.json({ token, userId: user.userId });
+                if (err) {
+                    console.error('JWT Sign Error:', err);
+                    return res.status(500).json({ 
+                        success: false, 
+                        message: 'Token generation failed',
+                        error: err.message 
+                    });
+                }
+                
+                // Return in frontend-expected format
+                res.json({ 
+                    success: true,
+                    data: {
+                        token,
+                        user: {
+                            id: user._id || user.id,
+                            email: user.email,
+                            name: user.firstName || user.email.split('@')[0],
+                            userId: user.userId
+                        }
+                    },
+                    message: 'Login successful'
+                });
             }
         );
     } catch (err) {
         console.error('Login Error:', err);
-        res.status(500).json({ msg: 'Server error', error: err.message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error', 
+            error: err.message 
+        });
     }
 };
 
@@ -93,7 +155,12 @@ exports.googleAuth = async (req, res) => {
     console.log('Token received:', !!googleToken);
 
     if (!googleToken) {
-        return res.status(400).json({ msg: 'No token provided', received: req.body });
+        return res.status(400).json({ 
+            success: false, 
+            message: 'No token provided', 
+            error: 'No token provided',
+            received: req.body 
+        });
     }
 
     try {
@@ -112,7 +179,7 @@ exports.googleAuth = async (req, res) => {
         if (!user) {
             console.log('Creating new user...');
             user = new User({
-                userId: sub, // Use Google's unique ID or generate one
+                userId: sub,
                 email,
                 googleId: sub,
                 firstName: given_name
@@ -136,14 +203,37 @@ exports.googleAuth = async (req, res) => {
             (err, token) => {
                 if (err) {
                     console.error('JWT Sign Error:', err);
-                    return res.status(500).json({ msg: 'Token generation failed', error: err.message });
+                    return res.status(500).json({ 
+                        success: false, 
+                        message: 'Token generation failed', 
+                        error: err.message 
+                    });
                 }
                 console.log('Token generated successfully');
-                res.json({ token, userId: user.userId });
+                
+                // Return in frontend-expected format
+                res.json({ 
+                    success: true,
+                    data: {
+                        token,
+                        user: {
+                            id: user._id || user.id,
+                            email: user.email,
+                            name: user.firstName || user.email.split('@')[0],
+                            userId: user.userId,
+                            googleId: user.googleId
+                        }
+                    },
+                    message: 'Google login successful'
+                });
             }
         );
     } catch (err) {
         console.error('Google Auth Error:', err);
-        res.status(500).json({ msg: 'Google login failed', error: err.message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Google login failed', 
+            error: err.message 
+        });
     }
 };

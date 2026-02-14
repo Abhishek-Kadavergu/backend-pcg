@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const connectDB = require('./config/db');
+const connectDB = require('./src/config/db');
 
 const app = express();
 
@@ -24,11 +24,13 @@ app.use((req, res, next) => {
 connectDB();
 
 // Define Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/tickets', require('./routes/ticketRoutes'));
+app.use('/api/auth', require('./src/routes/authRoutes'));
+app.use('/api/tickets', require('./src/routes/ticketRoutes'));
+app.use('/api/routing-rules', require('./src/routes/routingRoutes'));
 
 // Alternative routes without /api prefix (for client compatibility)
-app.use('/auth', require('./routes/authRoutes'));
-app.use('/tickets', require('./routes/ticketRoutes'));
+app.use('/auth', require('./src/routes/authRoutes'));
+app.use('/tickets', require('./src/routes/ticketRoutes'));
+app.use('/routing-rules', require('./src/routes/routingRoutes'));
 
 module.exports = app;
