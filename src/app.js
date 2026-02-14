@@ -27,4 +27,8 @@ connectDB();
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 
+// Alternative routes without /api prefix (for client compatibility)
+app.use('/auth', require('./routes/authRoutes'));
+app.use('/tickets', require('./routes/ticketRoutes'));
+
 module.exports = app;

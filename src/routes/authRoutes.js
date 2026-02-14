@@ -19,6 +19,11 @@ router.post('/login', authController.login);
 // @access  Public
 router.post('/google', authController.googleAuth);
 
+// @route   POST api/auth/google-login
+// @desc    Google login (alternative endpoint)
+// @access  Public
+router.post('/google-login', authController.googleAuth);
+
 // @route   GET api/auth/user
 // @desc    Get user data
 // @access  Private
@@ -28,7 +33,25 @@ router.get('/user', auth, async (req, res) => {
         res.json(user);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+// @route   GET api/auth/profile
+// @desc    Get user profile
+// @access  Private
+router.get('/profile', auth, async (req, res) => {
+    try {
+        console.log('[Profile] Fetching profile for user:', req.user.id);
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        console.log('[Profile] User found:', user.email);
+        res.json(user);
+    } catch (err) {
+        console.error('[Profile] Error:', err.message);
+        res.status(500).json({ msg: 'Server Error', error: err.message });
     }
 });
 
