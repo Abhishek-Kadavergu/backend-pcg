@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-module.exports = function (req, res, next) {
+module.exports = async function (req, res, next) {
     console.log('[Auth Middleware] All request headers:', req.headers);
     
     // Get token from header - support both x-auth-token and Authorization Bearer
@@ -23,8 +24,20 @@ module.exports = function (req, res, next) {
     try {
         console.log('[Auth Middleware] Verifying token...');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded.user;
-        console.log('[Auth Middleware] Token verified successfully');
+        
+        // Fetch full user object to get role
+        const user = await User.findById(decoded.user.id).select('-password');
+        if (!user) {
+            return res.status(401).json({ msg: 'User not found' });
+        }
+        
+        req.user = {
+            id: user._id.toString(),
+            role: user.role || 'user',
+            email: user.email
+        };
+        
+        console.log('[Auth Middleware] Token verified successfully, user role:', req.user.role);
         next();
     } catch (err) {
         console.log('[Auth Middleware] Token verification failed:', err.message);

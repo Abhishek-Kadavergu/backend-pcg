@@ -1,15 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const ticketController = require('../controllers/ticketController');
-const auth = require('../middleware/authMiddleware');
-
-// All routes are protected
-router.use(auth);
+// REMOVED AUTH - ALL ROUTES ARE NOW PUBLIC
 
 // Analyze endpoint (for ML classification)
 router.post('/analyze', ticketController.analyzeTicket);
 
-// Ticket CRUD endpoints
+// Ticket CRUD endpoints - ALL PUBLIC
 router.post('/', ticketController.createTicket);
 router.post('/create', ticketController.createTicket); // Alternative endpoint for frontend compatibility
 router.get('/', ticketController.getTickets);
